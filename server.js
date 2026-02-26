@@ -7,57 +7,66 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Test route
+const PORT = process.env.PORT || 10000;
+
+let otpStore = {};
+
+// Root test
 app.get("/", (req, res) => {
   res.send("NEXO OTP Backend Running 🚀");
 });
 
-// Gmail transporter
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: "chiteshkumar4446@gmail.com",
-    pass: "rfhymxhfgwenybip"   // 👈 YAHAN Gmail App Password daalna
-  }
-});
-
-// Send OTP Route
+// Email OTP send
 app.post("/send-otp", async (req, res) => {
+
+  const { email } = req.body;
+
+  if (!email) {
+    return res.json({ message: "Email required" });
+  }
+
+  const otp = Math.floor(100000 + Math.random() * 900000);
+
+  otpStore[email] = otp;
+
   try {
-    const { email } = req.body;
 
-    if (!email) {
-      return res.status(400).json({ message: "Email required" });
-    }
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      }
+    });
 
-    const otp = Math.floor(100000 + Math.random() * 900000);
-
-    const mailOptions = {
-      from: "chiteshkumar4446@gmail.com",
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
       to: email,
-      subject: "Your NEXO OTP Code",
-      html: `
-        <div style="font-family:Arial;padding:20px">
-          <h2>Your OTP Code</h2>
-          <h1 style="color:blue">${otp}</h1>
-          <p>This OTP is valid for 5 minutes.</p>
-        </div>
-      `
-    };
+      subject: "Your NEXO OTP",
+      text: `Your OTP is ${otp}`
+    });
 
-    await transporter.sendMail(mailOptions);
+    res.json({ message: "OTP Sent Successfully ✅" });
 
-    console.log("OTP sent to:", email);
-    res.json({ message: "OTP sent successfully ✅" });
-
-  } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ message: "Failed to send OTP ❌" });
+  } catch (err) {
+    console.log(err);
+    res.json({ message: "Error sending OTP ❌" });
   }
 });
 
-// Start server
-const PORT = process.env.PORT || 10000;
+// Verify OTP
+app.post("/verify-otp", (req, res) => {
+
+  const { email, otp } = req.body;
+
+  if (otpStore[email] == otp) {
+    delete otpStore[email];
+    res.json({ message: "Login Successful 🎉" });
+  } else {
+    res.json({ message: "Invalid OTP ❌" });
+  }
+});
+
 app.listen(PORT, () => {
-  console.log("Server running on port", PORT);
+  console.log("Server running on port " + PORT);
 });
