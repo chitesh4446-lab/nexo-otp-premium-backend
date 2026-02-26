@@ -7,18 +7,31 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PORT = process.env.PORT || 10000;
+const PORT = process.env.PORT || 3000;
+
+// ============================
+// 🔐 Gmail Transport Setup
+// ============================
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: "chiteshkumar4446@gmail.com",      // 👈 yaha apna email daalna
+    pass: "rfhymxhfgwenybip" // 👈 yaha Gmail App Password daalna
+  }
+});
+
+// ============================
+// 🧠 Temporary OTP Storage
+// ============================
 
 let otpStore = {};
 
-// Root test
-app.get("/", (req, res) => {
-  res.send("NEXO OTP Backend Running 🚀");
-});
+// ============================
+// 📩 Send OTP API
+// ============================
 
-// Email OTP send
 app.post("/send-otp", async (req, res) => {
-
   const { email } = req.body;
 
   if (!email) {
@@ -30,43 +43,46 @@ app.post("/send-otp", async (req, res) => {
   otpStore[email] = otp;
 
   try {
-
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.chiteshkumar4446@gmail.com,
-        pass: process.env.
-      }rfhymxhfgwenybip
-    });
-
     await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+      from: "chiteshkumar4446@gmail.com", // 👈 same email yaha bhi
       to: email,
-      subject: "Your NEXO OTP",
-      text: `Your OTP is ${otp}`
+      subject: "Your NEXO OTP Code",
+      html: `
+        <h2>Your OTP Code</h2>
+        <h1>${otp}</h1>
+        <p>This OTP will expire in 5 minutes.</p>
+      `
     });
 
-    res.json({ message: "OTP Sent Successfully ✅" });
+    console.log("OTP sent:", otp);
 
-  } catch (err) {
-    console.log(err);
-    res.json({ message: "Error sending OTP ❌" });
+    res.json({ message: "OTP sent successfully" });
+
+  } catch (error) {
+    console.log(error);
+    res.json({ message: "Error sending OTP" });
   }
 });
 
-// Verify OTP
-app.post("/verify-otp", (req, res) => {
+// ============================
+// ✅ Verify OTP API
+// ============================
 
+app.post("/verify-otp", (req, res) => {
   const { email, otp } = req.body;
 
   if (otpStore[email] == otp) {
     delete otpStore[email];
-    res.json({ message: "Login Successful 🎉" });
+    return res.json({ message: "OTP Verified ✅ Login Success" });
   } else {
-    res.json({ message: "Invalid OTP ❌" });
+    return res.json({ message: "Invalid OTP ❌" });
   }
 });
 
+app.get("/", (req, res) => {
+  res.send("NEXO OTP Backend Running 🚀");
+});
+
 app.listen(PORT, () => {
-  console.log("Server running on port " + PORT);
+  console.log("Server running on port", PORT);
 });
