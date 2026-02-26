@@ -24,8 +24,8 @@ const blockedDomains = [
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: "YOUR_GMAIL@gmail.com",        // 👈 apna gmail
-    pass: "YOUR_APP_PASSWORD"            // 👈 jo abhi mila (without spaces)
+    user: "chiteshkumar4446@gmail.com",        // 👈 apna gmail
+    pass: "rfhymxhfgwenybip"            // 👈 jo abhi mila (without spaces)
   }
 });
 
